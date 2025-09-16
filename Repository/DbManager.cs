@@ -1,47 +1,120 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-public class DbManager
+using visit_card.Models;
+using System.Collections.Generic;
+
+namespace visit_card.Repository
 {
-    private readonly string _connectionString;
 
-    public DbManager(IConfiguration configuration)
+    public class DbManager
     {
-        _connectionString = configuration.GetConnectionString("WFAppConnection");
-    }
+        private readonly string _connectionString;
 
-    public void ExecuteNonQuery(string storedProcedureName, SqlParameter[] parameters)
-    {
-        using (var connection = new SqlConnection(_connectionString))
+        public DbManager(IConfiguration configuration)
         {
-            using (var command = new SqlCommand(storedProcedureName, connection))
-            {
-                command.CommandType = CommandType.StoredProcedure;
-                command.Parameters.AddRange(parameters);
-                connection.Open();
-                command.ExecuteNonQuery();
-            }
+            _connectionString = configuration.GetConnectionString("WFAppConnection")!;
         }
-    }
 
-    public DataTable GetDataTable(string storedProcedureName, SqlParameter[] parameters)
-    {
-        DataTable dt = new DataTable();
-        using (var connection = new SqlConnection(_connectionString))
+        
+        public void ExecuteNonQuery(string storedProcedureName, SqlParameter[] parameters)
         {
-            using (var command = new SqlCommand(storedProcedureName, connection))
+            using (var connection = new SqlConnection(_connectionString))
             {
-                command.CommandType = CommandType.StoredProcedure;
-                if (parameters != null)
+                using (var command = new SqlCommand(storedProcedureName, connection))
                 {
+                    command.CommandType = CommandType.StoredProcedure;
                     command.Parameters.AddRange(parameters);
-                }
-                using (var adapter = new SqlDataAdapter(command))
-                {
-                    adapter.Fill(dt);
+                    connection.Open();
+                    command.ExecuteNonQuery();
                 }
             }
         }
-        return dt;
+
+                public DataTable GetEmployeeDetails(int employeeId)
+        {
+            DataTable dt = new DataTable();
+            string storedProcedureName = "VisitingCardRequest_GetEmployeeDetails";
+            var parameters = new[] { new SqlParameter("@EID", employeeId) };
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                using (var command = new SqlCommand(storedProcedureName, connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddRange(parameters);
+                    using (var adapter = new SqlDataAdapter(command))
+                    {
+                        adapter.Fill(dt);
+                    }
+                }
+            }
+            return dt;
+        }
+
+         public DataTable GetVisitingCardDetailsByMasterId(int masterId)
+        {
+            DataTable dt = new DataTable();
+            string storedProcedureName = "VisitingCardRequest_GetDeatilsByMasterID";
+            var parameters = new[] { new SqlParameter("@VCRID", masterId) };
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                using (var command = new SqlCommand(storedProcedureName, connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddRange(parameters);
+                    using (var adapter = new SqlDataAdapter(command))
+                    {
+                        adapter.Fill(dt);
+                    }
+                }
+            }
+            return dt;
+        }
+
+        
+        public bool CheckIsEligible(int employeeId)
+        {
+            string storedProcedureName = "VisitingCardRequest_CheckIsEligible";
+            var parameters = new[] { new SqlParameter("@EID", employeeId) };
+
+            
+            object result = null;
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                using (var command = new SqlCommand(storedProcedureName, connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddRange(parameters);
+                    connection.Open();
+                    result = command.ExecuteScalar();
+                }
+            }
+
+            
+            return result != null && Convert.ToBoolean(result);
+        }
+
+                public DataTable GetLocations(bool isActive)
+        {
+            DataTable dt = new DataTable();
+            string storedProcedureName = "VisitingCardRequest.getLocations";
+            var parameters = new[] { new SqlParameter("@IsActive", isActive) };
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                using (var command = new SqlCommand(storedProcedureName, connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddRange(parameters);
+                    using (var adapter = new SqlDataAdapter(command))
+                    {
+                        adapter.Fill(dt);
+                    }
+                }
+            }
+            return dt;
+        }
     }
 }

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("visit_card")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+57e6276c931283ae3469479d196eb1e7d9e65c30")]
 [assembly: System.Reflection.AssemblyProductAttribute("visit_card")]
 [assembly: System.Reflection.AssemblyTitleAttribute("visit_card")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

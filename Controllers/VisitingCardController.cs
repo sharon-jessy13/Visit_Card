@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using visit_card.Models;
+using visit_card.Services;
+using System.Data;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -15,10 +17,15 @@ public class VisitingCardController : ControllerBase
     [HttpGet("check-eligibility/{employeeId}")]
     public IActionResult CheckEligibility(int employeeId)
     {
-        // Check if employee is eligible for a visiting card
+        
         bool isEligible = _visitingCardService.CheckIsEligible(employeeId);
         if (isEligible)
         {
+           
+            DataTable employeeDetails = _visitingCardService.GetEmployeeDetails(employeeId);
+            DataTable locations = _visitingCardService.GetLocations(true);
+
+            
             return Ok(new { IsEligible = true, Message = "Employee is eligible to apply for a visiting card." });
         }
         return Unauthorized(new { IsEligible = false, Message = "Employee is not eligible." });
@@ -27,7 +34,6 @@ public class VisitingCardController : ControllerBase
     [HttpPost("submit-request")]
     public IActionResult SubmitRequest([FromBody] VisitingCardRequest request)
     {
-        
         if (string.IsNullOrEmpty(request.EmployeeName) || string.IsNullOrEmpty(request.Designation))
         {
             return BadRequest("Employee name and designation are mandatory.");
@@ -35,7 +41,6 @@ public class VisitingCardController : ControllerBase
 
         try
         {
-            
             _visitingCardService.SaveVisitingCardRequest(request);
             return Ok("Visiting card request submitted successfully.");
         }
@@ -48,7 +53,6 @@ public class VisitingCardController : ControllerBase
     [HttpPut("update-request")]
     public IActionResult UpdateRequest([FromBody] VisitingCardRequest request)
     {
-        
         if (request.VCRID <= 0)
         {
             return BadRequest("VCRID is required to update a request.");
@@ -65,10 +69,18 @@ public class VisitingCardController : ControllerBase
         }
     }
 
-    
     [HttpGet("get-request/{vcrId}")]
     public IActionResult GetRequestDetails(int vcrId)
     {
-        return Ok($"Loading details for VCRID: {vcrId}.");
+        
+        DataTable details = _visitingCardService.GetVisitingCardDetails(vcrId);
+        
+
+        if (details.Rows.Count == 0)
+        {
+            return NotFound($"No details found for VCRID: {vcrId}.");
+        }
+        
+        return Ok(details);
     }
 }
