@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using visit_card.Models;
 using visit_card.Services;
-using System.Data;
+
+namespace visit_card.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -14,73 +15,52 @@ public class VisitingCardController : ControllerBase
         _visitingCardService = visitingCardService;
     }
 
+    // --- GET Endpoints ---
+
     [HttpGet("check-eligibility/{employeeId}")]
-    public IActionResult CheckEligibility(int employeeId)
+        public async Task<IActionResult> CheckEligibility(int employeeId)
     {
-        
-        bool isEligible = _visitingCardService.CheckIsEligible(employeeId);
-        if (isEligible)
+        var result = await _visitingCardService.CheckEligibilityAndGetDetailsAsync(employeeId);
+        if (!result.IsEligible)
         {
-           
-            DataTable employeeDetails = _visitingCardService.GetEmployeeDetails(employeeId);
-            DataTable locations = _visitingCardService.GetLocations(true);
-
-            
-            return Ok(new { IsEligible = true, Message = "Employee is eligible to apply for a visiting card." });
+            return StatusCode(StatusCodes.Status403Forbidden, result);
         }
-        return Unauthorized(new { IsEligible = false, Message = "Employee is not eligible." });
-    }
-
-    [HttpPost("submit-request")]
-    public IActionResult SubmitRequest([FromBody] VisitingCardRequest request)
-    {
-        if (string.IsNullOrEmpty(request.EmployeeName) || string.IsNullOrEmpty(request.Designation))
-        {
-            return BadRequest("Employee name and designation are mandatory.");
-        }
-
-        try
-        {
-            _visitingCardService.SaveVisitingCardRequest(request);
-            return Ok("Visiting card request submitted successfully.");
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"An error occurred: {ex.Message}");
-        }
-    }
-
-    [HttpPut("update-request")]
-    public IActionResult UpdateRequest([FromBody] VisitingCardRequest request)
-    {
-        if (request.VCRID <= 0)
-        {
-            return BadRequest("VCRID is required to update a request.");
-        }
-
-        try
-        {
-            _visitingCardService.UpdateVisitingCardRequest(request);
-            return Ok("Visiting card request updated successfully.");
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"An error occurred: {ex.Message}");
-        }
+        return Ok(result);
     }
 
     [HttpGet("get-request/{vcrId}")]
-    public IActionResult GetRequestDetails(int vcrId)
+    public async Task<IActionResult> GetRequestDetails(int vcrId)
     {
-        
-        DataTable details = _visitingCardService.GetVisitingCardDetails(vcrId);
-        
-
-        if (details.Rows.Count == 0)
+        var details = await _visitingCardService.GetRequestDetailsAsync(vcrId);
+        if (details == null)
         {
-            return NotFound($"No details found for VCRID: {vcrId}.");
+            return NotFound(new { Message = $"No details found for VCRID: {vcrId}." });
         }
-        
         return Ok(details);
+    }
+
+
+
+    [HttpPost("submit-request")]
+    public async Task<IActionResult> SubmitRequest([FromBody] VisitingCardRequest request)
+    {
+        if (string.IsNullOrEmpty(request.EmployeeName) || string.IsNullOrEmpty(request.Designation))
+        {
+            return BadRequest(new { Message = "Employee name and designation are mandatory." });
+        }
+        await _visitingCardService.SaveVisitingCardRequestAsync(request);
+        return Ok(new { Message = "Visiting card request submitted successfully." });
+    }
+
+
+    [HttpPut("update-request/{vcrId}")]
+    public async Task<IActionResult> UpdateRequest(int vcrId, [FromBody] VisitingCardRequest request)
+    {
+        if (vcrId <= 0)
+        {
+            return BadRequest(new { Message = "A valid VCRID is required." });
+        }
+        await _visitingCardService.UpdateVisitingCardRequestAsync(vcrId, request);
+        return Ok(new { Message = $"Visiting card request {vcrId} updated successfully." });
     }
 }

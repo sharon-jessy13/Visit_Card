@@ -1,98 +1,70 @@
-using System.Data;
 using Microsoft.Data.SqlClient;
 using visit_card.Models;
 using visit_card.Repository;
 
-namespace visit_card.Services
+namespace visit_card.Services;
+
+public class VisitingCardService
 {
-    public class VisitingCardService
+    private readonly DbManager _dbManager;
+
+    public VisitingCardService(DbManager dbManager)
     {
-        private readonly DbManager _dbManager;
-
-        public VisitingCardService(DbManager dbManager)
+        _dbManager = dbManager;
+    }
+    
+    public async Task<EligibilityCheckResponseDto> CheckEligibilityAndGetDetailsAsync(int employeeId)
+    {
+        bool isEligible = await _dbManager.CheckIsEligibleAsync(employeeId);
+        if (!isEligible)
         {
-            _dbManager = dbManager;
+            return new EligibilityCheckResponseDto { IsEligible = false, Message = "Employee is not eligible." };
         }
-
-        public bool CheckIsEligible(int employeeId)
+        var employeeDetails = await _dbManager.GetEmployeeDetailsAsync(employeeId);
+        var locations = await _dbManager.GetLocationsAsync(true);
+        return new EligibilityCheckResponseDto
         {
-           
-            return _dbManager.CheckIsEligible(employeeId);
-        }
+            IsEligible = true,
+            Message = "Employee is eligible to apply for a visiting card.",
+            EmployeeDetails = employeeDetails,
+            Locations = locations
+        };
+    }
 
-        public DataTable GetEmployeeDetails(int employeeId)
+    public async Task<VisitingCardRequest?> GetRequestDetailsAsync(int vcrId)
+    {
+        return await _dbManager.GetRequestDetailsByIdAsync(vcrId);
+    }
+
+    public async Task SaveVisitingCardRequestAsync(VisitingCardRequest request)
+    {
+        var parameters = new List<SqlParameter>
         {
-            
-            return _dbManager.GetEmployeeDetails(employeeId);
-        }
-
-        public DataTable GetLocations(bool isActive)
+            new("@EmployeeName", request.EmployeeName),
+            new("@Designation", request.Designation),
+            new("@Group", request.Group),
+            new("@NoOfCards", request.NumberOfCards),
+            new("@WorkLocation", request.WorkLocation),
+            new("@IsDesignationDisplayed", request.IsDesignationDisplayed),
+            new("@IsGroupDisplayed", request.IsGroupDisplayed),
+            new("@IsKannadaAddressIncluded", request.IsKannadaAddressIncluded),
+            new("@MobileNo", string.IsNullOrEmpty(request.MobileNumber) ? DBNull.Value : request.MobileNumber)
+        };
+        await _dbManager.ExecuteNonQueryAsync("VisitingCardRequest_InsertCardDetails", parameters.ToArray());
+    }
+    
+    public async Task UpdateVisitingCardRequestAsync(int vcrId, VisitingCardRequest request)
+    {
+        var parameters = new List<SqlParameter>
         {
-            
-            return _dbManager.GetLocations(isActive);
-        }
-
-        public void SaveVisitingCardRequest(VisitingCardRequest request)
-        {
-            
-            var parameters = new List<SqlParameter>
-            {
-                new SqlParameter("@EmployeeName", request.EmployeeName),
-                new SqlParameter("@Designation", request.Designation),
-                new SqlParameter("@Group", request.Group),
-                new SqlParameter("@NoOfCards", request.NumberOfCards),
-                new SqlParameter("@WorkLocation", request.WorkLocation),
-                new SqlParameter("@IsDesignationDisplayed", request.IsDesignationDisplayed),
-                new SqlParameter("@IsGroupDisplayed", request.IsGroupDisplayed),
-                new SqlParameter("@IsKannadaAddressIncluded", request.IsKannadaAddressIncluded)
-            };
-
-            if (!string.IsNullOrEmpty(request.MobileNumber))
-            {
-                parameters.Add(new SqlParameter("@MobileNo", request.MobileNumber));
-            }
-            else
-            {
-                parameters.Add(new SqlParameter("@MobileNo", DBNull.Value));
-            }
-
-            var vcrIdParam = new SqlParameter("@VCRID", SqlDbType.BigInt)
-            {
-                Direction = ParameterDirection.Output
-            };
-            parameters.Add(vcrIdParam);
-
-            _dbManager.ExecuteNonQuery("VisitingCardRequest_InsertCardDetails", parameters.ToArray());
-        }
-
-        public void UpdateVisitingCardRequest(VisitingCardRequest request)
-        {
-            
-            var parameters = new List<SqlParameter>
-            {
-                new SqlParameter("@VCRID", request.VCRID),
-                new SqlParameter("@EmployeeName", request.EmployeeName),
-                new SqlParameter("@Designation", request.Designation),
-                new SqlParameter("@NoOfCards", request.NumberOfCards),
-                new SqlParameter("@WorkLocation", request.WorkLocation),
-                new SqlParameter("@IsKannadaAddressIncluded", request.IsKannadaAddressIncluded)
-            };
-            if (!string.IsNullOrEmpty(request.MobileNumber))
-            {
-                parameters.Add(new SqlParameter("@MobileNo", request.MobileNumber));
-            }
-            else
-            {
-                parameters.Add(new SqlParameter("@MobileNo", DBNull.Value));
-            }
-
-            _dbManager.ExecuteNonQuery("VCR_UpdateCardDetails", parameters.ToArray());
-        }
-        
-        public DataTable GetVisitingCardDetails(int masterId)
-        {
-            
-            return _dbManager.GetVisitingCardDetailsByMasterId(masterId);
-        }
+            new("@VCRID", vcrId),
+            new("@EmployeeName", request.EmployeeName),
+            new("@Designation", request.Designation),
+            new("@NoOfCards", request.NumberOfCards),
+            new("@WorkLocation", request.WorkLocation),
+            new("@IsKannadaAddressIncluded", request.IsKannadaAddressIncluded),
+            new("@MobileNo", string.IsNullOrEmpty(request.MobileNumber) ? DBNull.Value : request.MobileNumber)
+        };
+        await _dbManager.ExecuteNonQueryAsync("VCR_UpdateCardDetails", parameters.ToArray());
     }
 }

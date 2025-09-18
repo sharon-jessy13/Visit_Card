@@ -2,6 +2,8 @@ using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using visit_card.Repository;  
+using visit_card.Services; 
 var builder = WebApplication.CreateBuilder(args);
 
 

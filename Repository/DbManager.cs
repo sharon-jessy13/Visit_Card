@@ -1,120 +1,113 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using visit_card.Models;
-using System.Collections.Generic;
 
-namespace visit_card.Repository
+namespace visit_card.Repository;
+
+public class DbManager
 {
+    private readonly string _connectionString;
 
-    public class DbManager
+    public DbManager(IConfiguration configuration)
     {
-        private readonly string _connectionString;
+        _connectionString = configuration.GetConnectionString("WFAppConnection")!;
+    }
 
-        public DbManager(IConfiguration configuration)
+    public async Task<bool> CheckIsEligibleAsync(int employeeId)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand("VisitingCardRequest_CheckIsEligible", connection)
         {
-            _connectionString = configuration.GetConnectionString("WFAppConnection")!;
-        }
+            CommandType = CommandType.StoredProcedure
+        };
+        command.Parameters.Add(new SqlParameter("@EID", employeeId));
+        await connection.OpenAsync();
+        var result = await command.ExecuteScalarAsync();
+        return result != null && Convert.ToBoolean(result);
+    }
 
-        
-        public void ExecuteNonQuery(string storedProcedureName, SqlParameter[] parameters)
+    public async Task<EmployeeDetailsDto?> GetEmployeeDetailsAsync(int employeeId)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand("VisitingCardRequest_GetEmployeeDetails", connection)
         {
-            using (var connection = new SqlConnection(_connectionString))
+            CommandType = CommandType.StoredProcedure
+        };
+        command.Parameters.Add(new SqlParameter("@EID", employeeId));
+        await connection.OpenAsync();
+        await using var reader = await command.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return new EmployeeDetailsDto
             {
-                using (var command = new SqlCommand(storedProcedureName, connection))
-                {
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.AddRange(parameters);
-                    connection.Open();
-                    command.ExecuteNonQuery();
-                }
-            }
+                EmployeeId = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
+                EmployeeName = reader.GetString(reader.GetOrdinal("EmployeeName")),
+                Designation = reader.GetString(reader.GetOrdinal("Designation"))
+            };
         }
+        return null;
+    }
 
-                public DataTable GetEmployeeDetails(int employeeId)
+    public async Task<IEnumerable<LocationDto>> GetLocationsAsync(bool isActive)
+    {
+        var locations = new List<LocationDto>();
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand("VisitingCardRequest_GetLocations", connection)
         {
-            DataTable dt = new DataTable();
-            string storedProcedureName = "VisitingCardRequest_GetEmployeeDetails";
-            var parameters = new[] { new SqlParameter("@EID", employeeId) };
-
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                using (var command = new SqlCommand(storedProcedureName, connection))
-                {
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.AddRange(parameters);
-                    using (var adapter = new SqlDataAdapter(command))
-                    {
-                        adapter.Fill(dt);
-                    }
-                }
-            }
-            return dt;
-        }
-
-         public DataTable GetVisitingCardDetailsByMasterId(int masterId)
+            CommandType = CommandType.StoredProcedure
+        };
+        command.Parameters.Add(new SqlParameter("@IsActive", isActive));
+        await connection.OpenAsync();
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
         {
-            DataTable dt = new DataTable();
-            string storedProcedureName = "VisitingCardRequest_GetDeatilsByMasterID";
-            var parameters = new[] { new SqlParameter("@VCRID", masterId) };
-
-            using (var connection = new SqlConnection(_connectionString))
+            locations.Add(new LocationDto
             {
-                using (var command = new SqlCommand(storedProcedureName, connection))
-                {
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.AddRange(parameters);
-                    using (var adapter = new SqlDataAdapter(command))
-                    {
-                        adapter.Fill(dt);
-                    }
-                }
-            }
-            return dt;
+                LocationId = reader.GetInt32(reader.GetOrdinal("LocationId")),
+                Name = reader.GetString(reader.GetOrdinal("LocationName"))
+            });
         }
+        return locations;
+    }
 
-        
-        public bool CheckIsEligible(int employeeId)
+    public async Task<VisitingCardRequest?> GetRequestDetailsByIdAsync(int vcrId)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand("VisitingCardRequest_GetDeatilsByMasterID", connection)
         {
-            string storedProcedureName = "VisitingCardRequest_CheckIsEligible";
-            var parameters = new[] { new SqlParameter("@EID", employeeId) };
-
-            
-            object result = null;
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                using (var command = new SqlCommand(storedProcedureName, connection))
-                {
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.AddRange(parameters);
-                    connection.Open();
-                    result = command.ExecuteScalar();
-                }
-            }
-
-            
-            return result != null && Convert.ToBoolean(result);
-        }
-
-                public DataTable GetLocations(bool isActive)
+            CommandType = CommandType.StoredProcedure
+        };
+        command.Parameters.Add(new SqlParameter("@VCRID", vcrId));
+        await connection.OpenAsync();
+        await using var reader = await command.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
         {
-            DataTable dt = new DataTable();
-            string storedProcedureName = "VisitingCardRequest.getLocations";
-            var parameters = new[] { new SqlParameter("@IsActive", isActive) };
-
-            using (var connection = new SqlConnection(_connectionString))
+            return new VisitingCardRequest
             {
-                using (var command = new SqlCommand(storedProcedureName, connection))
-                {
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.Parameters.AddRange(parameters);
-                    using (var adapter = new SqlDataAdapter(command))
-                    {
-                        adapter.Fill(dt);
-                    }
-                }
-            }
-            return dt;
+                VCRID = reader.GetInt32(reader.GetOrdinal("VCRID")),
+                EmployeeName = reader.GetString(reader.GetOrdinal("EmployeeName")),
+                Designation = reader.GetString(reader.GetOrdinal("Designation")),
+                Group = reader.GetString(reader.GetOrdinal("Group")),
+                NumberOfCards = reader.GetInt32(reader.GetOrdinal("NumberOfCards")),
+                MobileNumber = reader.IsDBNull(reader.GetOrdinal("MobileNumber")) ? null : reader.GetString(reader.GetOrdinal("MobileNumber")),
+                WorkLocation = reader.GetString(reader.GetOrdinal("WorkLocation")),
+                IsDesignationDisplayed = reader.GetBoolean(reader.GetOrdinal("IsDesignationDisplayed")),
+                IsGroupDisplayed = reader.GetBoolean(reader.GetOrdinal("IsGroupDisplayed")),
+                IsKannadaAddressIncluded = reader.GetBoolean(reader.GetOrdinal("IsKannadaAddressIncluded"))
+            };
         }
+        return null;
+    }
+
+    public async Task ExecuteNonQueryAsync(string storedProcedureName, params SqlParameter[] parameters)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(storedProcedureName, connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        command.Parameters.AddRange(parameters);
+        await connection.OpenAsync();
+        await command.ExecuteNonQueryAsync();
     }
 }
