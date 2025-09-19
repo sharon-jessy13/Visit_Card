@@ -24,7 +24,7 @@ public class VisitingCardRequest
 // DTO for returning employee details
 public class EmployeeDetailsDto
 {
-    public int EmployeeId { get; set; }
+    public long EmployeeId { get; set; }
     public string? EmployeeName { get; set; } 
     public string? Designation { get; set; }
     public int MworkLocationID { get; set; }
@@ -48,4 +48,19 @@ public class EligibilityCheckResponseDto
     public string Message { get; set; } = string.Empty;
     public EmployeeDetailsDto? EmployeeDetails { get; set; }
     public IEnumerable<LocationDto>? Locations { get; set; }
+}
+
+public class VisitingCardInsertDto
+{
+    public int MempID { get; set; }
+    public string EmployeeName { get; set; }
+    public string Designation { get; set; }
+    public string? Group { get; set; }
+    public int NumberOfCards { get; set; }
+    public string MySingleID { get; set; }
+    public int MworkLocationID { get; set; }
+    public bool IsDesignationDisplayed { get; set; }
+    public bool IsGroupDisplayed { get; set; }
+    public bool IsKannadaAddressIncluded { get; set; }
+    public string? MobileNumber { get; set; }
 }

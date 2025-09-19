@@ -15,10 +15,8 @@ public class VisitingCardController : ControllerBase
         _visitingCardService = visitingCardService;
     }
 
-    // --- GET Endpoints ---
-
     [HttpGet("check-eligibility/{employeeId}")]
-        public async Task<IActionResult> CheckEligibility(int employeeId)
+    public async Task<IActionResult> CheckEligibility(int employeeId)
     {
         var result = await _visitingCardService.CheckEligibilityAndGetDetailsAsync(employeeId);
         if (!result.IsEligible)
@@ -39,19 +37,17 @@ public class VisitingCardController : ControllerBase
         return Ok(details);
     }
 
-
-
     [HttpPost("submit-request")]
-    public async Task<IActionResult> SubmitRequest([FromBody] VisitingCardRequest request)
+    public async Task<IActionResult> SubmitRequest([FromBody] VisitingCardInsertDto request)
     {
         if (string.IsNullOrEmpty(request.EmployeeName) || string.IsNullOrEmpty(request.Designation))
         {
             return BadRequest(new { Message = "Employee name and designation are mandatory." });
         }
-        await _visitingCardService.SaveVisitingCardRequestAsync(request);
-        return Ok(new { Message = "Visiting card request submitted successfully." });
-    }
 
+        var newVcrId = await _visitingCardService.SaveVisitingCardRequestAsync(request);
+        return Ok(new { vcrId = newVcrId });
+    }
 
     [HttpPut("update-request/{vcrId}")]
     public async Task<IActionResult> UpdateRequest(int vcrId, [FromBody] VisitingCardRequest request)

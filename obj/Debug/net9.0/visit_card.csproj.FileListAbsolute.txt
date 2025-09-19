@@ -80,3 +80,4 @@ C:\samsung\visit_card\obj\Debug\net9.0\refint\visit_card.dll
 C:\samsung\visit_card\obj\Debug\net9.0\visit_card.pdb
 C:\samsung\visit_card\obj\Debug\net9.0\visit_card.genruntimeconfig.cache
 C:\samsung\visit_card\obj\Debug\net9.0\ref\visit_card.dll
+C:\samsung\visit_card\obj\Debug\net9.0\visit_card.sourcelink.json

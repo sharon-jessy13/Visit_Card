@@ -40,10 +40,10 @@ public class DbManager
         {
             return new EmployeeDetailsDto
             {
-                EmployeeId = reader.GetInt32(reader.GetOrdinal("EID")),
+                EmployeeId = reader.GetInt64(reader.GetOrdinal("EID")),
                 EmployeeName = reader.GetString(reader.GetOrdinal("FullName")),
                 Designation = reader.GetString(reader.GetOrdinal("Designation")),
-                MworkLocationID = reader.GetInt32(reader.GetOrdinal("MworkLocationID")),
+                MworkLocationID = reader.GetInt32(reader.GetOrdinal("MWorkLocationID")),
                 MySingleID = reader.GetString(reader.GetOrdinal("MySingleID")),
                 GroupName = reader.GetString(reader.GetOrdinal("GroupName")),
                 Labname = reader.IsDBNull(reader.GetOrdinal("Labname")) ? null : reader.GetString(reader.GetOrdinal("Labname")),
@@ -114,5 +114,18 @@ public class DbManager
         command.Parameters.AddRange(parameters);
         await connection.OpenAsync();
         await command.ExecuteNonQueryAsync();
+    }
+
+    public async Task<object> ExecuteNonQueryWithOutputAsync(string storedProcedureName, string outputParamName, params SqlParameter[] parameters)
+    {
+        await using var connection = new SqlConnection(_connectionString);
+        await using var command = new SqlCommand(storedProcedureName, connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        command.Parameters.AddRange(parameters);
+        await connection.OpenAsync();
+        await command.ExecuteNonQueryAsync();
+        return command.Parameters[outputParamName].Value;
     }
 }
