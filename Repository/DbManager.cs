@@ -40,9 +40,14 @@ public class DbManager
         {
             return new EmployeeDetailsDto
             {
-                EmployeeId = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
-                EmployeeName = reader.GetString(reader.GetOrdinal("EmployeeName")),
-                Designation = reader.GetString(reader.GetOrdinal("Designation"))
+                EmployeeId = reader.GetInt32(reader.GetOrdinal("EID")),
+                EmployeeName = reader.GetString(reader.GetOrdinal("FullName")),
+                Designation = reader.GetString(reader.GetOrdinal("Designation")),
+                MworkLocationID = reader.GetInt32(reader.GetOrdinal("MworkLocationID")),
+                MySingleID = reader.GetString(reader.GetOrdinal("MySingleID")),
+                GroupName = reader.GetString(reader.GetOrdinal("GroupName")),
+                Labname = reader.IsDBNull(reader.GetOrdinal("Labname")) ? null : reader.GetString(reader.GetOrdinal("Labname")),
+                ResourceType = reader.GetString(reader.GetOrdinal("ResourceType"))
             };
         }
         return null;
@@ -63,8 +68,8 @@ public class DbManager
         {
             locations.Add(new LocationDto
             {
-                LocationId = reader.GetInt32(reader.GetOrdinal("LocationId")),
-                Name = reader.GetString(reader.GetOrdinal("LocationName"))
+                LocationId = reader.GetInt32(reader.GetOrdinal("MWorklocationID")),
+                Name = reader.GetString(reader.GetOrdinal("Location"))
             });
         }
         return locations;

@@ -12,7 +12,7 @@ public class VisitingCardService
     {
         _dbManager = dbManager;
     }
-    
+
     public async Task<EligibilityCheckResponseDto> CheckEligibilityAndGetDetailsAsync(int employeeId)
     {
         bool isEligible = await _dbManager.CheckIsEligibleAsync(employeeId);
@@ -40,31 +40,35 @@ public class VisitingCardService
     {
         var parameters = new List<SqlParameter>
         {
-            new("@EmployeeName", request.EmployeeName),
-            new("@Designation", request.Designation),
-            new("@Group", request.Group),
-            new("@NoOfCards", request.NumberOfCards),
-            new("@WorkLocation", request.WorkLocation),
-            new("@IsDesignationDisplayed", request.IsDesignationDisplayed),
-            new("@IsGroupDisplayed", request.IsGroupDisplayed),
-            new("@IsKannadaAddressIncluded", request.IsKannadaAddressIncluded),
-            new("@MobileNo", string.IsNullOrEmpty(request.MobileNumber) ? DBNull.Value : request.MobileNumber)
-        };
+        new("@MEmpID", request.MempID),
+        new("@EmployeeName", request.EmployeeName),
+        new("@Designation", request.Designation),
+        new("@EmpGroup", request.Group),
+        new("@NoOfCards", request.NumberOfCards),
+        new("@MySingleID", request.MySingleID),
+        new("@MworkLocationID", request.MworkLocationID),
+        new("@IsDesignationDisplayed", request.IsDesignationDisplayed),
+        new("@IsGroupDisplayed", request.IsGroupDisplayed),
+        new("@IsKannadaAddressIncluded", request.IsKannadaAddressIncluded),
+        new("@MobileNo", string.IsNullOrEmpty(request.MobileNumber) ? DBNull.Value : request.MobileNumber)
+    };
         await _dbManager.ExecuteNonQueryAsync("VisitingCardRequest_InsertCardDetails", parameters.ToArray());
     }
-    
+
     public async Task UpdateVisitingCardRequestAsync(int vcrId, VisitingCardRequest request)
     {
         var parameters = new List<SqlParameter>
         {
-            new("@VCRID", vcrId),
-            new("@EmployeeName", request.EmployeeName),
-            new("@Designation", request.Designation),
-            new("@NoOfCards", request.NumberOfCards),
-            new("@WorkLocation", request.WorkLocation),
-            new("@IsKannadaAddressIncluded", request.IsKannadaAddressIncluded),
-            new("@MobileNo", string.IsNullOrEmpty(request.MobileNumber) ? DBNull.Value : request.MobileNumber)
-        };
+        new("@VCRID", vcrId),
+        new("@EmployeeName", request.EmployeeName),
+        new("@Designation", request.Designation),
+        new("@EmpGroup", request.Group),
+        new("@NoOfCards", request.NumberOfCards),
+        new("@MySingleID", request.MySingleID),
+        new("@MobileNo", string.IsNullOrEmpty(request.MobileNumber) ? DBNull.Value : request.MobileNumber),
+        new("@MworkLocationID", request.MworkLocationID),
+        new("@IsKannadaAddressIncluded", request.IsKannadaAddressIncluded)
+    };
         await _dbManager.ExecuteNonQueryAsync("VCR_UpdateCardDetails", parameters.ToArray());
     }
 }
